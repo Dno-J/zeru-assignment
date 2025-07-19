@@ -1,9 +1,8 @@
-// 📁 index.js 
+// 📁 index.js
 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const serverless = require('serverless-http');
 require('dotenv').config();
 
 const app = express();
@@ -42,4 +41,7 @@ app.use('/api/schedule', require('./routes/schedule'));
 app.use('/api/birthdate', require('./routes/birthdate'));
 
 // 🔹 Vercel Export
-module.exports = serverless(app);
+// ⛳ Change this from "module.exports = serverless(app);" to:
+const serverless = require('serverless-http');
+module.exports = app;
+module.exports.handler = serverless(app);
