@@ -25,10 +25,15 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error('❌ MongoDB connection error:', err.message);
 });
 
-// 🔹 Health Check
+// 🔹 Health Check (MongoDB)
 app.get('/api/test-db', (_, res) => {
   const isConnected = mongoose.connection.readyState === 1;
   res.status(200).json({ mongoConnected: isConnected });
+});
+
+// 🔹 Sanity Check (Plain Ping)
+app.get('/api/ping', (_, res) => {
+  res.status(200).json({ message: 'pong from Vercel' });
 });
 
 // 🔹 Modular Routes
