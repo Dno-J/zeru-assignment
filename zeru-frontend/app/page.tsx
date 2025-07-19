@@ -30,13 +30,7 @@ export default function Home() {
     setStatus('Sending...');
 
     try {
-      console.log('Sending request:', {
-        token: form.token,
-        network: form.network,
-        timestamp: parsedTimestamp
-      });
-
-      const res = await axios.post('http://localhost:5000/schedule', {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/schedule`, {
         token: form.token,
         network: form.network,
         timestamp: parsedTimestamp
@@ -46,6 +40,30 @@ export default function Home() {
     } catch (err: any) {
       console.error('Error response:', err.response?.data);
       setStatus(`❌ ${err.response?.data?.message || 'Error scheduling job'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleScheduleHistory = async () => {
+    if (!form.token || !form.network) {
+      setStatus('⚠️ Please provide token and network.');
+      return;
+    }
+
+    setLoading(true);
+    setStatus('Scheduling full history...');
+
+    try {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/schedule`, {
+        token: form.token,
+        network: form.network
+      });
+
+      setStatus(`✅ ${res.data.message || 'History job scheduled!'}`);
+    } catch (err: any) {
+      console.error('Error response:', err.response?.data);
+      setStatus(`❌ ${err.response?.data?.message || 'Error scheduling history job'}`);
     } finally {
       setLoading(false);
     }
@@ -94,6 +112,8 @@ export default function Home() {
             className="w-full border border-gray-300 p-2 rounded placeholder-gray-500 text-gray-900 bg-gray-50"
             required
           />
+
+          {/* Submit Job for Specific Timestamp */}
           <button
             type="submit"
             className={`w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 ${
@@ -104,6 +124,19 @@ export default function Home() {
             {loading ? 'Scheduling...' : 'Schedule Job'}
           </button>
 
+          {/* Schedule Full History */}
+          <button
+            type="button"
+            onClick={handleScheduleHistory}
+            className={`w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700 ${
+              loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={loading}
+          >
+            {loading ? 'Scheduling History...' : 'Schedule Full History'}
+          </button>
+
+          {/* Status Feedback */}
           {loading && (
             <div className="flex justify-center items-center mt-2">
               <svg
@@ -112,21 +145,14 @@ export default function Home() {
                 fill="none"
                 viewBox="0 0 24 24"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path
                   className="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8v8H4z"
                 />
               </svg>
-              <p className="text-sm text-blue-600">Scheduling in progress...</p>
+              <p className="text-sm text-blue-600">Request in progress...</p>
             </div>
           )}
 
