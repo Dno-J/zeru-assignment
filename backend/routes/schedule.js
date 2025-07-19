@@ -3,11 +3,11 @@
 const express = require('express');
 const router = express.Router();
 
-// Import the controller that schedules price jobs
+// 🔹 Import the controller for handling job scheduling via POST
 const { schedulePriceJobs } = require('../controllers/scheduleController');
 
-// 🔹 Route: GET /schedule?token=...&network=...
-// This triggers BullMQ jobs to fetch and store prices
-router.get('/', schedulePriceJobs);
+// 🔹 Route: POST /schedule
+// Accepts JSON body with token, network, and timestamp
+router.post('/', schedulePriceJobs);
 
 module.exports = router;
