@@ -1,55 +1,43 @@
-// 📁 workers/jobWorker.js
+import { Worker } from 'bullmq';
+import mongoose from 'mongoose';
+import axios from 'axios';
+import Redis from 'ioredis';
+import dotenv from 'dotenv';
 
-const { Worker } = require('bullmq');
-const Redis = require('ioredis');
-const mongoose = require('mongoose');
-const PriceModel = require('../models/Price');
-require('dotenv').config();
+dotenv.config();
 
-// 🔹 Connect to Redis
-const redisConnection = new Redis(process.env.REDIS_URL, {
-  maxRetriesPerRequest: null, // Prevents retry errors during long jobs
-});
-
-// 🔹 Connect to MongoDB
+// MongoDB Setup
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected (worker)'))
-  .catch((err) => console.error('❌ MongoDB error (worker):', err));
+  .catch(err => console.error('❌ MongoDB connection failed:', err));
 
-// 🔹 Create a BullMQ worker that listens to 'priceQueue'
-const worker = new Worker('priceQueue', async (job) => {
-  const { token, network } = job.data;
-  console.log(`🔄 Processing job: ${token} on ${network}`);
+// Redis Connection
+const redis = new Redis(process.env.REDIS_URL);
 
+// BullMQ Worker Definition
+const priceWorker = new Worker('token-price-queue', async job => {
   try {
-    // 🔹 Generate a mock price (replace with Alchemy later)
-    const mockPrice = (Math.random() * 2).toFixed(3);
+    const { token, network } = job.data;
 
-    // 🔹 Save the price to MongoDB
-    await PriceModel.create({
-      token: token.toLowerCase(),
-      network: network.toLowerCase(),
-      price: mockPrice,
-      timestamp: new Date(), // Required for sorting and retrieval
-    });
+    // Example: Simulate fetching price from external API
+    const response = await axios.get(`https://api.coincap.io/v2/assets/${token}`);
+    const price = response.data?.data?.priceUsd || null;
 
-    console.log(`💰 ${token.toUpperCase()} price on ${network}: $${mockPrice}`);
-    return { token, price: mockPrice };
+    console.log(`💰 ${token} price on ${network}: $${price}`);
+
+    // Save to MongoDB (example schema)
+    const TokenPrice = mongoose.model('TokenPrice', new mongoose.Schema({
+      token: String,
+      network: String,
+      price: String,
+      timestamp: { type: Date, default: Date.now }
+    }));
+
+    await TokenPrice.create({ token, network, price });
+    console.log(`✅ Job completed: ${job.id}`);
   } catch (err) {
-    console.error(`❌ Failed to fetch price for ${token}:`, err);
-    throw err; // Ensures job is marked as failed
+    console.error(`❌ Error processing job ${job.id}:`, err);
   }
-}, {
-  connection: redisConnection,
-  concurrency: 5, // Allows up to 5 jobs to run in parallel
-});
+}, { connection: redis });
 
-// 🔹 Log job completion
-worker.on('completed', (job) => {
-  console.log(`✅ Job completed: ${job.id}`);
-});
-
-// 🔹 Log job failure
-worker.on('failed', (job, err) => {
-  console.error(`❌ Job failed: ${job.id}`, err.message);
-});
+console.log('🔄 Worker is running and listening for jobs...');
