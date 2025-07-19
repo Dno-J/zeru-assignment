@@ -1,10 +1,10 @@
-// 📁 index.js (Vercel-Ready, Cleaned)
+// 📁 index.js (Vercel-Ready, Final Optimized)
 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const serverless = require('serverless-http');
-require('dotenv').config(); // Load .env variables in local dev
+require('dotenv').config();
 
 const app = express();
 
@@ -15,26 +15,26 @@ app.use(cors({
   credentials: true
 }));
 
-// 🔹 DB Connection
+// 🔹 MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
-  console.log('✅ MongoDB connected');
+  console.log('✅ MongoDB connected (Atlas)');
 }).catch(err => {
   console.error('❌ MongoDB connection error:', err.message);
 });
 
-// 🔹 Health Check Route
-app.get('/api/test-db', (req, res) => {
+// 🔹 Health Check
+app.get('/api/test-db', (_, res) => {
   const isConnected = mongoose.connection.readyState === 1;
-  res.json({ mongoConnected: isConnected });
+  res.status(200).json({ mongoConnected: isConnected });
 });
 
-// 🔹 App Routes (modular)
+// 🔹 Modular Routes
 app.use('/api/price', require('./routes/price'));
 app.use('/api/schedule', require('./routes/schedule'));
 app.use('/api/birthdate', require('./routes/birthdate'));
 
-// 🔹 Export as serverless function
+// 🔹 Export for Vercel Serverless
 module.exports = serverless(app);
