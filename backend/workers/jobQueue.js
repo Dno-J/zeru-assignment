@@ -2,19 +2,19 @@
 
 const { Queue } = require('bullmq');
 const Redis = require('ioredis');
+require('dotenv').config();
 
-// 🔹 Connect to Redis using the URL from .env
+// 🔹 Redis connection
 const connection = new Redis(process.env.REDIS_URL);
 
-// 🔹 Create a BullMQ queue named 'priceQueue'
-// This queue is used to schedule jobs from the /schedule route
+// 🔹 Define BullMQ queue (match name with worker)
 const priceQueue = new Queue('priceQueue', { connection });
 
-// 🔹 Export a reusable function to add jobs to the queue
+// 🔹 Export job-scheduling function
 exports.addPriceJob = async (jobData) => {
   await priceQueue.add('fetch-price', jobData, {
-    removeOnComplete: true, // Clean up completed jobs
-    removeOnFail: true,     // Clean up failed jobs
+    removeOnComplete: true,
+    removeOnFail: true,
   });
 
   console.log('📤 Job added:', jobData);
