@@ -1,27 +1,19 @@
 {
-  "name": "zeru-backend",
+  "name": "zeru-worker",
   "version": "1.0.0",
-  "description": "Serverless Express backend for Zeru Finance",
-  "main": "workers/jobWorker.js",
+  "description": "BullMQ Redis worker for Zeru Finance",
+  "main": "jobWorker.js",
   "type": "module",
   "scripts": {
-    "start": "node workers/jobWorker.js",
-    "dev": "nodemon api/index.js",
-    "vercel": "node api/index.js",
-    "worker": "node workers/jobWorker.js",
-    "test": "echo \"No tests yet\" && exit 0"
+    "start": "node jobWorker.js",
+    "dev": "nodemon jobWorker.js",
+    "test": "echo \"No worker tests yet\" && exit 0"
   },
   "dependencies": {
-    "alchemy-sdk": "^3.6.1",
     "bullmq": "^5.56.4",
-    "cors": "^2.8.5",
-    "dayjs": "^1.11.13",
     "dotenv": "^17.2.0",
-    "express": "^5.1.0",
-    "express-list-endpoints": "^7.1.1",
-    "mongoose": "^8.16.4",
     "ioredis": "^5.4.1",
-    "serverless-http": "^3.2.0"
+    "mongoose": "^8.16.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
