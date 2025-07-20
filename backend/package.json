@@ -2,10 +2,8 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Express API for Zeru Finance",
-  "main": "api/index.js",
   "type": "module",
   "scripts": {
-    "start": "node api/index.js",
     "dev": "nodemon api/index.js",
     "test": "echo \"No tests yet\" && exit 0"
   },
