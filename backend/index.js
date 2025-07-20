@@ -1,4 +1,4 @@
-// 📁 backend/index.js
+// backend/index.js
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -11,20 +11,25 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN || '*',
-  credentials: true
+  credentials: true,
 }));
 
-// 🔹 MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('✅ MongoDB connected (Atlas)');
-}).catch(err => {
-  console.error('❌ MongoDB connection error:', err.message);
+// 🔹 MongoDB Config
+mongoose.set('strictQuery', false); // optional: suppress deprecation warning
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ MongoDB connected (Atlas)');
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err.message);
+  });
+
+// 🔹 Base Route for Friendly Landing
+app.get('/', (_, res) => {
+  res.status(200).json({ message: 'Backend is running. Use /api/* routes.' });
 });
 
-// 🔹 Health Check
+// 🔹 Health Check Routes
 app.get('/api/ping', (_, res) => {
   res.status(200).json({ message: 'pong from Vercel' });
 });
@@ -39,6 +44,6 @@ app.use('/api/price', require('./routes/price'));
 app.use('/api/schedule', require('./routes/schedule'));
 app.use('/api/birthdate', require('./routes/birthdate'));
 
-// 🔹 Vercel Export for Serverless
+// 🔹 Vercel Serverless Export
 const serverless = require('serverless-http');
 module.exports = serverless(app);
