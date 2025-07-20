@@ -1,43 +1,48 @@
-// 📁 workers/jobWorker.js
+// backend/workers/jobworker.js
 
-import { Worker } from 'bullmq';
-import mongoose from 'mongoose';
-import axios from 'axios';
-import Redis from 'ioredis';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import { Worker } from 'bullmq';
+import Redis from 'ioredis';
+import handlePriceJob from '../services/priceJobHandler.js';
 
-dotenv.config();
+// 🔹 Load .env from root
+dotenv.config({
+  path: new URL('../.env', import.meta.url).pathname // ensures compatibility in ESM
+});
 
-// 🔹 MongoDB Connection
+// 🔹 Validate Mongo URI
+if (!process.env.MONGO_URI) {
+  console.error('❌ Missing MONGO_URI in environment variables');
+  process.exit(1);
+}
+
+// 🔹 MongoDB Connect
+mongoose.set('strictQuery', false);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected (worker)'))
-  .catch(err => console.error('❌ MongoDB connection failed:', err));
+  .catch(err => {
+    console.error('❌ MongoDB connection failed:', err.message);
+    process.exit(1);
+  });
 
-// 🔹 Redis Setup
-const redis = new Redis(process.env.REDIS_URL);
+// 🔹 Validate Redis Config
+if (!process.env.REDIS_HOST || !process.env.REDIS_PASSWORD) {
+  console.error('❌ Missing Redis credentials in environment variables');
+  process.exit(1);
+}
 
-// 🔹 Define BullMQ Worker (same queue name as jobQueue)
-const priceWorker = new Worker('priceQueue', async job => {
-  try {
-    const { token, network } = job.data;
+// 🔹 Redis Connection with BullMQ-safe config
+const connection = new Redis({
+  host: process.env.REDIS_HOST,
+  port: 6379,
+  password: process.env.REDIS_PASSWORD,
+  maxRetriesPerRequest: null
+});
 
-    const response = await axios.get(`https://api.coincap.io/v2/assets/${token}`);
-    const price = response.data?.data?.priceUsd || null;
-
-    console.log(`💰 ${token} price on ${network}: $${price}`);
-
-    const TokenPrice = mongoose.model('TokenPrice', new mongoose.Schema({
-      token: String,
-      network: String,
-      price: String,
-      timestamp: { type: Date, default: Date.now }
-    }));
-
-    await TokenPrice.create({ token, network, price });
-    console.log(`✅ Job completed: ${job.id}`);
-  } catch (err) {
-    console.error(`❌ Error processing job ${job.id}:`, err);
-  }
-}, { connection: redis });
+// 🔹 Worker Init
+const worker = new Worker('price-queue', handlePriceJob, {
+  connection
+});
 
 console.log('🔄 Worker is running and listening for jobs...');

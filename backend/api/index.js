@@ -14,21 +14,19 @@ app.use(cors({
   credentials: true,
 }));
 
-// 🔹 MongoDB Config
+// 🔹 MongoDB
 mongoose.set('strictQuery', false);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected (Atlas)'))
   .catch(err => console.error('❌ MongoDB connection error:', err.message));
 
-// 🔹 Health & Base Routes
+// 🔹 Health + Friendly Landing
 app.get('/', (_, res) => {
   res.status(200).json({ message: 'Backend is running. Use /api/* routes.' });
 });
-
 app.get('/api/ping', (_, res) => {
   res.status(200).json({ message: 'pong from Vercel' });
 });
-
 app.get('/api/test-db', (_, res) => {
   const isConnected = mongoose.connection.readyState === 1;
   res.status(200).json({ mongoConnected: isConnected });
@@ -39,6 +37,6 @@ app.use('/api/price', require('../routes/price'));
 app.use('/api/schedule', require('../routes/schedule'));
 app.use('/api/birthdate', require('../routes/birthdate'));
 
-// 🔹 Serverless Export for Vercel
+// 🔹 Export for Vercel
 const serverless = require('serverless-http');
 module.exports = serverless(app);
