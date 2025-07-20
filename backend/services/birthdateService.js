@@ -9,7 +9,7 @@ const tokenBirthdates = {
 };
 
 // 🔹 Service function to get birthdate for a token
-exports.getTokenBirthdate = async (token, network) => {
+export async function getTokenBirthdate(token, network) {
   const key = token.toLowerCase();
   return tokenBirthdates[key] || null;
-};
+}
