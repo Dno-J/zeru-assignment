@@ -1,6 +1,6 @@
 // 📁 models/Price.js
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // 🔹 Define the schema for storing token price data
 const priceSchema = new mongoose.Schema({
@@ -25,4 +25,5 @@ const priceSchema = new mongoose.Schema({
 });
 
 // 🔹 Export the model so it can be used in controllers and workers
-module.exports = mongoose.model('Price', priceSchema);
+const PriceModel = mongoose.model('Price', priceSchema);
+export default PriceModel;
