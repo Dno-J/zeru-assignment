@@ -1,9 +1,16 @@
 // backend/api/index.js
 
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import serverless from 'serverless-http';
+
+import priceRoutes from '../routes/price.js';
+import scheduleRoutes from '../routes/schedule.js';
+import birthdateRoutes from '../routes/birthdate.js';
+
+dotenv.config();
 
 const app = express();
 
@@ -33,10 +40,9 @@ app.get('/api/test-db', (_, res) => {
 });
 
 // 🔹 Modular Routes
-app.use('/api/price', require('../routes/price'));
-app.use('/api/schedule', require('../routes/schedule'));
-app.use('/api/birthdate', require('../routes/birthdate'));
+app.use('/api/price', priceRoutes);
+app.use('/api/schedule', scheduleRoutes);
+app.use('/api/birthdate', birthdateRoutes);
 
 // 🔹 Export for Vercel
-const serverless = require('serverless-http');
-module.exports = serverless(app);
+export default serverless(app);
