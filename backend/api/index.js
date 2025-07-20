@@ -1,4 +1,4 @@
-// backend/index.js
+// backend/api/index.js
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -15,7 +15,7 @@ app.use(cors({
 }));
 
 // 🔹 MongoDB Config
-mongoose.set('strictQuery', false); // optional: suppress deprecation warning
+mongoose.set('strictQuery', false);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected (Atlas)');
@@ -39,10 +39,10 @@ app.get('/api/test-db', (_, res) => {
   res.status(200).json({ mongoConnected: isConnected });
 });
 
-// 🔹 Modular Routes
-app.use('/api/price', require('./routes/price'));
-app.use('/api/schedule', require('./routes/schedule'));
-app.use('/api/birthdate', require('./routes/birthdate'));
+// 🔹 Modular Routes (corrected relative paths)
+app.use('/api/price', require('../routes/price'));
+app.use('/api/schedule', require('../routes/schedule'));
+app.use('/api/birthdate', require('../routes/birthdate'));
 
 // 🔹 Vercel Serverless Export
 const serverless = require('serverless-http');
