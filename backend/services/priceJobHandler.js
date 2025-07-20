@@ -1,7 +1,32 @@
-// backend/services/priceJobHandler.js
+// 📁 backend/services/priceJobHandler.js
 
-module.exports = async (job) => {
-  console.log(`Processing job: ${job.id}`);
-  // TODO: implement actual processing logic here
-  return { success: true };
-};
+export default async function priceJobHandler(job) {
+  const { token, network, timestamp } = job.data;
+
+  console.log(`📦 [priceJobHandler] Job ID: ${job.id}`);
+  console.log(`🔹 Token: ${token}, Network: ${network}, Timestamp: ${timestamp}`);
+
+  if (!token || !network || !timestamp) {
+    console.warn(`⚠️ Missing fields:`, job.data);
+    return { success: false, reason: 'Invalid job payload' };
+  }
+
+  try {
+    // 🛠 Simulate a process (e.g., DB write, API call, etc.)
+    const result = {
+      success: true,
+      stored: {
+        token,
+        network,
+        timestamp,
+        fetchedAt: new Date(),
+      },
+    };
+
+    console.log(`✅ Job processed:`, result);
+    return result;
+  } catch (err) {
+    console.error(`❌ Handler error:`, err);
+    throw err;
+  }
+}

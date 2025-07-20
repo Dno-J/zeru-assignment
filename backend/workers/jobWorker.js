@@ -1,42 +1,55 @@
-// backend/workers/jobWorker.js
+// 📁 backend/workers/jobworker.js
 
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import mongoose from 'mongoose';
-import { Worker } from 'bullmq';
-import Redis from 'ioredis';
-import handlePriceJob from '../services/priceJobHandler.js';
+import dotenv from 'dotenv';
 
-// 🔹 Resolve .env path (works in ESM mode)
+// 🔹 Dynamically resolve path to .env at project root
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-// 🔹 Validate env vars
-if (!process.env.MONGO_URI || !process.env.REDIS_HOST || !process.env.REDIS_PASSWORD) {
-  console.error('❌ Missing required env vars: MONGO_URI, REDIS_HOST or REDIS_PASSWORD');
-  process.exit(1);
-}
+import mongoose from 'mongoose';
+import { Worker } from 'bullmq';
+import Redis from 'ioredis';
+import priceJobHandler from '../services/priceJobHandler.js';
 
-// 🔹 MongoDB Connect
-mongoose.set('strictQuery', false);
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB connected (worker)'))
-  .catch(err => {
-    console.error('❌ MongoDB connection failed:', err.message);
-    process.exit(1);
-  });
+// 🔍 Debug log for env hydration
+console.log('🔍 MONGO_URI:', process.env.MONGO_URI);
+console.log('🔍 REDIS_URL:', process.env.REDIS_URL);
 
-// 🔹 Redis Connect
-const connection = new Redis({
-  host: process.env.REDIS_HOST,
-  port: 6379,
-  password: process.env.REDIS_PASSWORD,
-  maxRetriesPerRequest: null
+// 🔹 Redis Client with reconnection logic
+const redis = new Redis(process.env.REDIS_URL, {
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+  reconnectOnError: () => true,
 });
 
-// 🔹 Start Worker
-const worker = new Worker('price-queue', handlePriceJob, { connection });
+redis.on('connect', () => console.log('✅ Redis connected'));
+redis.on('error', err => console.error('❌ Redis error:', err));
+
+// 🔹 MongoDB Client
+mongoose.set('strictQuery', false);
+mongoose.connect(process.env.MONGO_URI, {
+  socketTimeoutMS: 30000,
+  serverSelectionTimeoutMS: 10000,
+})
+
+  .then(() => console.log('✅ MongoDB connected (worker)'))
+  .catch(err => console.error('❌ MongoDB connection error:', err.message));
+
+// 🔹 Worker to process price jobs
+const worker = new Worker('price-queue', priceJobHandler, {
+  connection: redis,
+  concurrency: 5,
+});
+
+worker.on('completed', (job, result) => {
+  console.log(`🎯 Completed job ${job.id}`, result);
+});
+
+worker.on('failed', (job, err) => {
+  console.error(`❌ Job ${job.id} failed`, err);
+});
 
 console.log('🔄 Worker is running and listening for jobs...');
