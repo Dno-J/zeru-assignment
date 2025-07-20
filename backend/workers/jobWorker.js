@@ -1,19 +1,21 @@
-// backend/workers/jobworker.js
+// backend/workers/jobWorker.js
 
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import { Worker } from 'bullmq';
 import Redis from 'ioredis';
 import handlePriceJob from '../services/priceJobHandler.js';
 
-// 🔹 Load .env from root
-dotenv.config({
-  path: new URL('../.env', import.meta.url).pathname // ensures compatibility in ESM
-});
+// 🔹 Resolve .env path (works in ESM mode)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-// 🔹 Validate Mongo URI
-if (!process.env.MONGO_URI) {
-  console.error('❌ Missing MONGO_URI in environment variables');
+// 🔹 Validate env vars
+if (!process.env.MONGO_URI || !process.env.REDIS_HOST || !process.env.REDIS_PASSWORD) {
+  console.error('❌ Missing required env vars: MONGO_URI, REDIS_HOST or REDIS_PASSWORD');
   process.exit(1);
 }
 
@@ -26,13 +28,7 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
-// 🔹 Validate Redis Config
-if (!process.env.REDIS_HOST || !process.env.REDIS_PASSWORD) {
-  console.error('❌ Missing Redis credentials in environment variables');
-  process.exit(1);
-}
-
-// 🔹 Redis Connection with BullMQ-safe config
+// 🔹 Redis Connect
 const connection = new Redis({
   host: process.env.REDIS_HOST,
   port: 6379,
@@ -40,9 +36,7 @@ const connection = new Redis({
   maxRetriesPerRequest: null
 });
 
-// 🔹 Worker Init
-const worker = new Worker('price-queue', handlePriceJob, {
-  connection
-});
+// 🔹 Start Worker
+const worker = new Worker('price-queue', handlePriceJob, { connection });
 
 console.log('🔄 Worker is running and listening for jobs...');
